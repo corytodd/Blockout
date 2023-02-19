@@ -9,9 +9,6 @@ env:
   SOLUTION_FILE_PATH: .
   BUILD_CONFIGURATION: Release
 
-permissions:
-  contents: read
-
 jobs:
   tagged-release:
     runs-on: windows-latest
