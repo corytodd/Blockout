@@ -11,6 +11,9 @@
 #define ALPHA_PERCENT 92
 #define BLOCKOUT_COLOR RGB(0, 0, 0)
 
+// Convert message pump event to relative point inside window
+#define TRUE_POINT(lParam) { LOWORD(lParam) , HIWORD(lParam) + GetSystemMetrics(SM_CYCAPTION) }
+
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
@@ -140,13 +143,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         PostQuitMessage(0);
         break;
     case WM_LBUTTONDOWN:
-        pHole->Start(hWnd, { LOWORD(lParam) , HIWORD(lParam) });
+        pHole->Start(hWnd, TRUE_POINT(lParam));
         return 1;
     case WM_LBUTTONUP:
-        pHole->End(hWnd, { LOWORD(lParam) , HIWORD(lParam) });
+        pHole->End(hWnd, TRUE_POINT(lParam));
         return 1;
     case WM_MOUSEMOVE:
-        pHole->Drag(hWnd, { LOWORD(lParam) , HIWORD(lParam) });
+        pHole->Drag(hWnd, TRUE_POINT(lParam));
         return 0;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
