@@ -10,5 +10,5 @@ to click and draw a transparent hole through which interesting data can be viewe
 
 ## Improvements
 
-- [ ] Make it easier to draw the initial hole
+- [X] Make it easier to draw the initial hole
 - [ ] Support multiple holes

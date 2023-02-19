@@ -8,6 +8,8 @@
 #include <memory>
 
 #define MAX_LOADSTRING 100
+#define ALPHA_PERCENT 92
+#define BLOCKOUT_COLOR RGB(0, 0, 0)
 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
@@ -75,7 +77,7 @@ ATOM RegisterClass(HINSTANCE hInstance)
     wcex.hInstance = hInstance;
     wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_BLOCKOUT));
     wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground = CreateSolidBrush(RGB(0, 0, 0));
+    wcex.hbrBackground = CreateSolidBrush(BLOCKOUT_COLOR);
     wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_BLOCKOUT);
     wcex.lpszClassName = szWindowClass;
     wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_BLOCKOUT));
@@ -90,7 +92,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     hInst = hInstance; // Store instance handle in our global variable
 
     HWND hWnd = CreateWindowExW(
-        WS_EX_TOPMOST,                          // dwExStyle
+        WS_EX_LAYERED | WS_EX_TOPMOST,          // dwExStyle
         szWindowClass,                          // lpClassName
         szTitle,                                // lpWindowName
         WS_TILEDWINDOW |
@@ -109,6 +111,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     {
         return FALSE;
     }
+
+    SetLayeredWindowAttributes(hWnd, 0, (255 * ALPHA_PERCENT) / 100, LWA_ALPHA);
 
     ShowWindow(hWnd, nCmdShow | nCmdShow);
     UpdateWindow(hWnd);
