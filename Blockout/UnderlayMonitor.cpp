@@ -47,17 +47,9 @@ namespace details
 
 
         /**
-        * @brief Relocate and resize overlay to match underlay
-        */
-        void UpdateOverlay()
-        {
-            UpdateOverlay(underlayWindow);
-        }
-
-        /**
         * @brief Relocate and resize overlay without overlapping focusWindow
         */
-        void UpdateOverlay(HWND focusWindow)
+        void UpdateOverlay()
         {
             RECT rect;
             GetWindowRect(underlayWindow, &rect);
@@ -68,18 +60,30 @@ namespace details
             int width = rect.right - rect.left;
             int height = rect.bottom - rect.top - captitionSizePixels;
 
-            // If either the over or underlay are focused, overlay must be topmost. Otherwise draw behind focused window.
-            HWND after = (focusWindow == underlayWindow || focusWindow == overlayWindow) ?
-                         HWND_TOPMOST : focusWindow;
-
+            // Resize and relocate overlay to match underlay
             SetWindowPos(
                 overlayWindow,      // hWnd
-                after,               // hWndInsertAfter
+                0,                  // hWndInsertAfter
                 rect.left,          // X
                 top,                // Y
                 width,              // cx
                 height,             // cy
                 0                   // uFlags
+            );
+
+            // Force overlay to be the previous window
+            // Z-order: next is below, previous is above
+            HWND after = GetNextWindow(underlayWindow, GW_HWNDPREV);
+            SetWindowPos(
+                overlayWindow,      // hWnd
+                after,              // hWndInsertAfter
+                0,                  // X
+                0,                  // Y
+                0,                  // cx
+                0,                  // cy
+                SWP_SHOWWINDOW |
+                SWP_NOMOVE |
+                SWP_NOSIZE          // uFlags
             );
         }
 
@@ -238,19 +242,6 @@ bool UnderlayMonitor::Impl::Connect(const std::wstring processName)
         )
     );
 
-    // Register callback to detect focus changes
-    hooks.push_back(
-        SetWinEventHook(
-            EVENT_SYSTEM_FOREGROUND,        // eventMin
-            EVENT_SYSTEM_FOREGROUND,        // eventMax
-            NULL,                           // hmodWinWventProc
-            &Impl::UnderlayChanged,         // pfnEventProc
-            0,                              // idProcess
-            0,                              // idThread,
-            WINEVENT_OUTOFCONTEXT           // dwFlags
-        )
-    );
-
     auto success = std::all_of(hooks.begin(), hooks.end(), [](HWINEVENTHOOK hook)
     {
         return hook != nullptr;
@@ -282,7 +273,7 @@ void UnderlayMonitor::Impl::UnderlayChanged(
     DWORD dwmsEventTime)
 {
     // TODO - this should instead enqueue an event
-    details::g_target->UpdateOverlay(hwnd);
+    details::g_target->UpdateOverlay();
 }
 
 UnderlayMonitor::UnderlayMonitor(HWND overlay)
