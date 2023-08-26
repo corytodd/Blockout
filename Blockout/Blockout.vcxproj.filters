@@ -30,9 +30,15 @@
     <ClInclude Include="Hole.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="UnderlayMonitor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blockout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UnderlayMonitor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
