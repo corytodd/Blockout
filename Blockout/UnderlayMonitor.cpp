@@ -37,19 +37,30 @@ namespace details
         {
         };
 
-        ~Target() {
-            if (underlayHandle != nullptr) {
+        ~Target()
+        {
+            if (underlayHandle != nullptr)
+            {
                 CloseHandle(underlayHandle);
             }
         }
+
 
         /**
         * @brief Relocate and resize overlay to match underlay
         */
         void UpdateOverlay()
         {
+            UpdateOverlay(underlayWindow);
+        }
+
+        /**
+        * @brief Relocate and resize overlay without overlapping focusWindow
+        */
+        void UpdateOverlay(HWND focusWindow)
+        {
             RECT rect;
-            GetWindowRect(this->underlayWindow, &rect);
+            GetWindowRect(underlayWindow, &rect);
 
             // 2x the caption - one each for the underlay and overlay
             const int captitionSizePixels = GetSystemMetrics(SM_CYCAPTION) * 2;
@@ -57,14 +68,18 @@ namespace details
             int width = rect.right - rect.left;
             int height = rect.bottom - rect.top - captitionSizePixels;
 
+            // If either the over or underlay are focused, overlay must be topmost. Otherwise draw behind focused window.
+            HWND after = (focusWindow == underlayWindow || focusWindow == overlayWindow) ?
+                         HWND_TOPMOST : focusWindow;
+
             SetWindowPos(
-                this->overlayWindow,    // hWnd
-                0,                      // hWndInsertAfter
-                rect.left,              // X
-                top,                    // Y
-                width,                  // cx
-                height,                 // cy
-                0                       // uFlags
+                overlayWindow,      // hWnd
+                after,               // hWndInsertAfter
+                rect.left,          // X
+                top,                // Y
+                width,              // cx
+                height,             // cy
+                0                   // uFlags
             );
         }
 
@@ -96,7 +111,8 @@ namespace details
             GetWindowRect(hwnd, &rect);
             const int area = RectArea(rect);
 
-            if (area > pTarget->windowArea) {
+            if (area > pTarget->windowArea)
+            {
                 pTarget->underlayWindow = hwnd;
                 pTarget->windowArea = area;
                 return true;
@@ -193,7 +209,8 @@ UnderlayMonitor::Impl::Impl(HWND overlay) :
     details::g_target = std::make_unique<details::Target>(overlay);
 }
 
-UnderlayMonitor::Impl::~Impl() {
+UnderlayMonitor::Impl::~Impl()
+{
     this->Disconnect();
 }
 
@@ -221,9 +238,21 @@ bool UnderlayMonitor::Impl::Connect(const std::wstring processName)
         )
     );
 
-    return this->hook != nullptr;
-    auto success = std::all_of(hooks.begin(), hooks.end(),
-        [](HWINEVENTHOOK hook) {
+    // Register callback to detect focus changes
+    hooks.push_back(
+        SetWinEventHook(
+            EVENT_SYSTEM_FOREGROUND,        // eventMin
+            EVENT_SYSTEM_FOREGROUND,        // eventMax
+            NULL,                           // hmodWinWventProc
+            &Impl::UnderlayChanged,         // pfnEventProc
+            0,                              // idProcess
+            0,                              // idThread,
+            WINEVENT_OUTOFCONTEXT           // dwFlags
+        )
+    );
+
+    auto success = std::all_of(hooks.begin(), hooks.end(), [](HWINEVENTHOOK hook)
+    {
         return hook != nullptr;
     });
 
@@ -253,7 +282,7 @@ void UnderlayMonitor::Impl::UnderlayChanged(
     DWORD dwmsEventTime)
 {
     // TODO - this should instead enqueue an event
-    details::g_target->UpdateOverlay();
+    details::g_target->UpdateOverlay(hwnd);
 }
 
 UnderlayMonitor::UnderlayMonitor(HWND overlay)
