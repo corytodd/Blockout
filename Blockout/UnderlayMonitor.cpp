@@ -10,6 +10,10 @@ namespace details
     // Do not close this HWND, we do not own it
     static HWND g_overlay;
 
+    /**
+    * @struct Target helps find target process window
+    * @brieft Tracks process attributes and automatically cleans up handles
+    */
     struct Target 
     {
 
@@ -17,7 +21,8 @@ namespace details
             underlayHandle(INVALID_HANDLE_VALUE), 
             underlayWindow(0),
             windowArea(0)
-        {};
+        {
+        };
         
         ~Target() {
             if (underlayHandle != nullptr) {
@@ -131,7 +136,6 @@ struct UnderlayMonitor::Impl
     void Disconnect();
 
     std::wstring currentProcessName;    ///< Underlay process name, if any
-    details::Target target;             ///< Underlay target
     HWINEVENTHOOK hook;                 ///< Registered hook, remember to unhook
 
     /**
@@ -147,6 +151,7 @@ struct UnderlayMonitor::Impl
         DWORD dwEventThread,
         DWORD dwmsEventTime);
 
+
     /**
     * @brief Update overlay to match underlay
     * @param rect underlay window location relative to screen
@@ -156,7 +161,6 @@ struct UnderlayMonitor::Impl
 
 UnderlayMonitor::Impl::Impl(HWND overlay) :
     currentProcessName(L""),
-    target(),
     hook(nullptr) {
 
     details::g_overlay = overlay;
