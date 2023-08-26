@@ -2,10 +2,13 @@
 //
 
 #include "framework.h"
-#include "Blockout.h"
-#include "Hole.h"
 
 #include <memory>
+#include <shellapi.h>
+
+#include "Blockout.h"
+#include "Hole.h"
+#include "UnderlayMonitor.h"
 
 #define MAX_LOADSTRING 100
 #define ALPHA_PERCENT 92
@@ -14,16 +17,23 @@
 // Convert message pump event to relative point inside window
 #define TRUE_POINT(lParam) { LOWORD(lParam) , HIWORD(lParam) + GetSystemMetrics(SM_CYCAPTION) }
 
+struct Args {
+    std::wstring targetProcessName;
+};
+
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+Args args;                                      // command line args
 std::unique_ptr<Hole> pHole;                    // window hole instance
+std::unique_ptr<UnderlayMonitor> pMonitor;      // target process monitor
 
 // Forward declarations of functions included in this code module:
 ATOM                RegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
+void                ParseArgs();
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
@@ -32,9 +42,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
+    ParseArgs();
 
     pHole = std::make_unique<Hole>();
-
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_BLOCKOUT, szWindowClass, MAX_LOADSTRING);
@@ -117,10 +127,30 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
     SetLayeredWindowAttributes(hWnd, 0, (255 * ALPHA_PERCENT) / 100, LWA_ALPHA);
 
+    if (!args.targetProcessName.empty()) {
+        pMonitor = std::make_unique<UnderlayMonitor>(hWnd);
+        pMonitor->StartMonitor(args.targetProcessName);
+    }
+
     ShowWindow(hWnd, nCmdShow | nCmdShow);
     UpdateWindow(hWnd);
 
     return TRUE;
+}
+
+//
+// Function ParseArgs()
+void ParseArgs()
+{
+    LPWSTR* szArglist;
+    int nArgs;
+
+    szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+    if (szArglist != NULL && nArgs > 1)
+    {
+        args.targetProcessName = szArglist[1];
+    }
+    LocalFree(szArglist);
 }
 
 //
