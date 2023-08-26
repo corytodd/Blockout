@@ -7,13 +7,69 @@
 namespace details 
 {
     // HACK - how to pass state into hwnd callback?
+    // Do not close this HWND, we do not own it
     static HWND g_overlay;
 
     struct Target 
     {
+
+        Target() : pid(0),
+            underlayHandle(INVALID_HANDLE_VALUE), 
+            underlayWindow(0),
+            windowArea(0)
+        {};
+        
+        ~Target() {
+            if (underlayHandle != nullptr) {
+                CloseHandle(underlayHandle);
+            }
+        }
+
         DWORD pid;
-        HANDLE handle;
+        HANDLE underlayHandle;      ///< Must be closed
+        HWND underlayWindow;        ///< Do not close
+        int windowArea;             ///< Cached window area
     };
+
+    /**
+    * @Returns the area of a rectangle
+    */
+    int RectArea(RECT a)
+    {
+        // Origin is top left
+        const int right = max(a.right, a.left);
+        const int left = min(a.right, a.left);
+        const int top = min(a.top, a.bottom);
+        const int bottom = max(a.top, a.bottom);
+
+        return (right - left) * (bottom - top);
+    }
+
+    /**
+    * @brief Callback returns false once a window for the given pid is found
+    * @param lparam Target* containing the pid to locate. Sets underlay field when found.
+    *   If the process has multiple windows, the larget window is returned.
+    * @returns false once found
+    */
+    BOOL CALLBACK FindTargetWindow(HWND hwnd, LPARAM lparam)
+    {
+        auto pTarget = reinterpret_cast<Target*>(lparam);
+        DWORD lpdwProcessId;
+        GetWindowThreadProcessId(hwnd, &lpdwProcessId);
+        if (pTarget->pid == lpdwProcessId)
+        {
+            RECT rect;
+            GetWindowRect(hwnd, &rect);
+            const int area = RectArea(rect);
+
+            if (area > pTarget->windowArea) {
+                pTarget->underlayWindow = hwnd;
+                pTarget->windowArea = area;
+                return true;
+            }
+        }
+        return true;
+    }
 
     /**
     * @brief Find target process by name and return process id and handle
@@ -48,10 +104,11 @@ namespace details
         if (pid != 0)
         {
             handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
-        }
 
-        result->pid = pid;
-        result->handle = nullptr;
+            result->pid = pid;
+            result->underlayHandle = handle;
+            EnumWindows(&FindTargetWindow, reinterpret_cast<LPARAM>(result));
+        }
 
         return result;
     }
@@ -61,7 +118,7 @@ namespace details
 struct UnderlayMonitor::Impl 
 {
     Impl(HWND overlay);
-    ~Impl() = default;
+    ~Impl();
 
     /**
     * @brief Create an underlay of this process
@@ -74,7 +131,7 @@ struct UnderlayMonitor::Impl
     void Disconnect();
 
     std::wstring currentProcessName;    ///< Underlay process name, if any
-    HANDLE currentHandle;               ///< Handle for current process, if any
+    details::Target target;             ///< Underlay target
     HWINEVENTHOOK hook;                 ///< Registered hook, remember to unhook
 
     /**
@@ -90,14 +147,23 @@ struct UnderlayMonitor::Impl
         DWORD dwEventThread,
         DWORD dwmsEventTime);
 
+    /**
+    * @brief Update overlay to match underlay
+    * @param rect underlay window location relative to screen
+    */
+    static void UpdateOverlay(RECT rect);
 };
 
 UnderlayMonitor::Impl::Impl(HWND overlay) :
     currentProcessName(L""),
-    currentHandle(nullptr),
+    target(),
     hook(nullptr) {
 
     details::g_overlay = overlay;
+}
+
+UnderlayMonitor::Impl::~Impl() {
+    this->Disconnect();
 }
 
 
@@ -108,7 +174,17 @@ bool UnderlayMonitor::Impl::Connect(const std::wstring processName)
     {
         return false;
     }
+    if (target.underlayWindow == nullptr) 
+    {
+        return false;
+    }
 
+    // Set initial location and size
+    RECT rect;
+    GetWindowRect(target.underlayWindow, &rect);
+    Impl::UpdateOverlay(rect);
+
+    // Register callback to detect future underlay changes
     hook = SetWinEventHook(
         EVENT_OBJECT_LOCATIONCHANGE,    // eventMin
         EVENT_OBJECT_LOCATIONCHANGE,    // eventMax
@@ -131,6 +207,25 @@ void UnderlayMonitor::Impl::Disconnect()
     }
 }
 
+void UnderlayMonitor::Impl::UpdateOverlay(RECT rect)
+{
+    // HACK - leave underlay title bar exposed but let's be dynamic please
+    const int title = 50;
+    int top = rect.top + title;
+    int width = rect.right - rect.left;
+    int height = rect.bottom - rect.top - title;
+
+    SetWindowPos(
+        details::g_overlay, // hWnd
+        0,                  // hWndInsertAfter
+        rect.left,          // X
+        top,                // Y
+        width,              // cx
+        height,             // cy
+        0                   // uFlags
+    );
+}
+
 void UnderlayMonitor::Impl::callback(
     HWINEVENTHOOK hook,
     DWORD event,
@@ -145,22 +240,7 @@ void UnderlayMonitor::Impl::callback(
     if (hwnd)
     {
         GetWindowRect(hwnd, &rect);
-
-        // HACK - leave underlay title bar exposed but let's be dynamic please
-        const int title = 50;
-        int top = rect.top + title;
-        int width = rect.right - rect.left;
-        int height = rect.bottom - rect.top - title;
-
-        SetWindowPos(
-            details::g_overlay, // hWnd
-            0,                  // hWndInsertAfter
-            rect.left,          // X
-            top,                // Y
-            width,              // cx
-            height,             // cy
-            0                   // uFlags
-        );
+        Impl::UpdateOverlay(rect);
     }
 }
 

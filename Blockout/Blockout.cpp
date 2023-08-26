@@ -127,13 +127,13 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
     SetLayeredWindowAttributes(hWnd, 0, (255 * ALPHA_PERCENT) / 100, LWA_ALPHA);
 
+    ShowWindow(hWnd, nCmdShow | nCmdShow);
+    UpdateWindow(hWnd);
+
     if (!args.targetProcessName.empty()) {
         pMonitor = std::make_unique<UnderlayMonitor>(hWnd);
         pMonitor->StartMonitor(args.targetProcessName);
     }
-
-    ShowWindow(hWnd, nCmdShow | nCmdShow);
-    UpdateWindow(hWnd);
 
     return TRUE;
 }
