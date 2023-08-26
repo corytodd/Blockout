@@ -1,6 +1,8 @@
 #include <windows.h>
 #include <TlHelp32.h>
 #include <oleacc.h>
+#include <algorithm>
+#include <vector>
 
 #include "UnderlayMonitor.h"
 
@@ -169,13 +171,13 @@ struct UnderlayMonitor::Impl
     void Disconnect();
 
     std::wstring currentProcessName;    ///< Underlay process name, if any
-    HWINEVENTHOOK hook;                 ///< Registered hook, remember to unhook
+    std::vector<HWINEVENTHOOK> hooks;   ///< Registered hooks, remember to unhook
 
     /**
     * @brief Move and resize overlay to match underlay
     * @see https://learn.microsoft.com/en-us/windows/win32/api/winuser/nc-winuser-wineventproc
     */
-    static void CALLBACK LocationChanged(
+    static void CALLBACK UnderlayChanged(
         HWINEVENTHOOK hook,
         DWORD event,
         HWND hwnd,
@@ -186,9 +188,8 @@ struct UnderlayMonitor::Impl
 };
 
 UnderlayMonitor::Impl::Impl(HWND overlay) :
-    currentProcessName(L""),
-    hook(nullptr) {
-
+    currentProcessName(L"")
+{
     details::g_target = std::make_unique<details::Target>(overlay);
 }
 
@@ -208,29 +209,41 @@ bool UnderlayMonitor::Impl::Connect(const std::wstring processName)
     details::g_target->UpdateOverlay();
 
     // Register callback to detect future underlay changes
-    hook = SetWinEventHook(
-        EVENT_OBJECT_LOCATIONCHANGE,    // eventMin
-        EVENT_OBJECT_LOCATIONCHANGE,    // eventMax
-        NULL,                           // hmodWinWventProc
-        &Impl::LocationChanged,         // pfnEventProc
-        details::g_target->pid,         // idProcess
-        0,                              // idThread,
-        WINEVENT_OUTOFCONTEXT           // dwFlags
+    hooks.push_back(
+        SetWinEventHook(
+            EVENT_OBJECT_LOCATIONCHANGE,    // eventMin
+            EVENT_OBJECT_LOCATIONCHANGE,    // eventMax
+            NULL,                           // hmodWinWventProc
+            &Impl::UnderlayChanged,         // pfnEventProc
+            details::g_target->pid,         // idProcess
+            0,                              // idThread,
+            WINEVENT_OUTOFCONTEXT           // dwFlags
+        )
     );
 
     return this->hook != nullptr;
+    auto success = std::all_of(hooks.begin(), hooks.end(),
+        [](HWINEVENTHOOK hook) {
+        return hook != nullptr;
+    });
+
+    return success;
 }
 
 void UnderlayMonitor::Impl::Disconnect()
 {
-    if (this->hook != nullptr)
+    for (auto i = 0; i < hooks.size(); ++i)
     {
-        UnhookWinEvent(this->hook);
-        this->hook = nullptr;
+        if (hooks.at(i) != nullptr)
+        {
+            UnhookWinEvent(hooks.at(i));
+            hooks.at(i) = nullptr;
+        }
     }
+    hooks.clear();
 }
 
-void UnderlayMonitor::Impl::LocationChanged(
+void UnderlayMonitor::Impl::UnderlayChanged(
     HWINEVENTHOOK hook,
     DWORD event,
     HWND hwnd,
