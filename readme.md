@@ -14,3 +14,5 @@ to click and draw a transparent hole through which interesting data can be viewe
 
 - [X] Make it easier to draw the initial hole
 - [ ] Support multiple holes
+- [ ] Automatically track an underlay window
+- [ ] Support targeting a process at runtime (instead of launch)
