@@ -43,15 +43,11 @@ namespace details
 
         /**
         * @brief Relocate and resize overlay to match underlay
-        * @param rect Underlay location information. If set, underlay window will
-            be automatically queried.
         */
-        void UpdateOverlay(RECT rect)
+        void UpdateOverlay()
         {
-            if (RectArea(rect) == 0)
-            {
-                GetWindowRect(this->underlayWindow, &rect);
-            }
+            RECT rect;
+            GetWindowRect(this->underlayWindow, &rect);
 
             // 2x the caption - one each for the underlay and overlay
             const int captitionSizePixels = GetSystemMetrics(SM_CYCAPTION) * 2;
@@ -206,7 +202,7 @@ bool UnderlayMonitor::Impl::Connect(const std::wstring processName)
     }
 
     // Set initial location and size
-    details::g_target->UpdateOverlay({ 0, 0 });
+    details::g_target->UpdateOverlay();
 
     // Register callback to detect future underlay changes
     hook = SetWinEventHook(
@@ -240,15 +236,8 @@ void UnderlayMonitor::Impl::LocationChanged(
     DWORD dwEventThread,
     DWORD dwmsEventTime)
 {
-
-    RECT rect;
-    if (hwnd)
-    {
-        GetWindowRect(hwnd, &rect);
-
-        // TODO - this should instead enqueue an event
-        details::g_target->UpdateOverlay(rect);
-    }
+    // TODO - this should instead enqueue an event
+    details::g_target->UpdateOverlay();
 }
 
 UnderlayMonitor::UnderlayMonitor(HWND overlay)
