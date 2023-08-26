@@ -9,7 +9,7 @@ namespace details
     /**
     * @Returns the area of a rectangle
     */
-    int RectArea(RECT a)
+    int RectArea(const RECT a)
     {
         // Origin is top left
         const int right = max(a.right, a.left);
