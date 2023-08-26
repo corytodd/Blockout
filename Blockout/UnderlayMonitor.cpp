@@ -28,9 +28,9 @@ namespace details
     {
 
         Target(HWND overlayWindow) : pid(0),
-            underlayHandle(INVALID_HANDLE_VALUE),
-            underlayWindow(0),
             overlayWindow(overlayWindow),
+            underlayWindow(0),
+            underlayHandle(INVALID_HANDLE_VALUE),
             windowArea(0)
         {
         };
@@ -66,10 +66,12 @@ namespace details
             );
         }
 
-        DWORD pid;
-        HANDLE underlayHandle;      ///< Must be closed
-        HWND underlayWindow;        ///< Do not close
         HWND overlayWindow;         ///< Do not close
+        HWND underlayWindow;        ///< Do not close
+        HANDLE underlayHandle;      ///< Must be closed
+        DWORD pid;
+
+        // TODO - this is only used for FindTarget, this should be tracked elsewhere
         int windowArea;             ///< Cached window area
     };
 
