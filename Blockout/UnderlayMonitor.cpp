@@ -106,7 +106,8 @@ namespace details
     /**
     * @brief Find target process by name and return process id and handle
     * @param processName full name of process (e.g. notepad++.exe)
-    * @param result receives pid and handle. Both set to 0 on error.
+    * @param result receives target metadata
+    * @returns True on success when all target metadata is found
     */
     bool FindTarget(const std::wstring processName, Target* result)
     {
