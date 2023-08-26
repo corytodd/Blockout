@@ -215,6 +215,7 @@ void UnderlayMonitor::Impl::UpdateOverlay(RECT rect)
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top - title;
 
+    // request to our main message pump. This will keep rendering on the main thread.
     SetWindowPos(
         details::g_overlay, // hWnd
         0,                  // hWndInsertAfter
@@ -240,6 +241,8 @@ void UnderlayMonitor::Impl::callback(
     if (hwnd)
     {
         GetWindowRect(hwnd, &rect);
+
+        // TODO - this should instead enqueue an event
         Impl::UpdateOverlay(rect);
     }
 }

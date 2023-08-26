@@ -133,6 +133,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     if (!args.targetProcessName.empty()) {
         pMonitor = std::make_unique<UnderlayMonitor>(hWnd);
         pMonitor->StartMonitor(args.targetProcessName);
+
+        // TODO set target app name in title bar?
     }
 
     return TRUE;
