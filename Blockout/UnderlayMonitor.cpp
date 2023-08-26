@@ -209,12 +209,13 @@ void UnderlayMonitor::Impl::Disconnect()
 
 void UnderlayMonitor::Impl::UpdateOverlay(RECT rect)
 {
-    // HACK - leave underlay title bar exposed but let's be dynamic please
-    const int title = 50;
-    int top = rect.top + title;
+    // 2x the caption - one each for the underlay and overlay
+    const int captitionSizePixels = GetSystemMetrics(SM_CYCAPTION) * 2;
+    int top = rect.top + captitionSizePixels;
     int width = rect.right - rect.left;
-    int height = rect.bottom - rect.top - title;
+    int height = rect.bottom - rect.top - captitionSizePixels;
 
+    // TODO - this should respond to the callback queue by publishing a location/resize
     // request to our main message pump. This will keep rendering on the main thread.
     SetWindowPos(
         details::g_overlay, // hWnd
