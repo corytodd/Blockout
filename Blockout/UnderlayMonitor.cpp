@@ -142,7 +142,7 @@ struct UnderlayMonitor::Impl
     * @brief Move and resize overlay to match underlay
     * @see https://learn.microsoft.com/en-us/windows/win32/api/winuser/nc-winuser-wineventproc
     */
-    static void CALLBACK callback(
+    static void CALLBACK LocationChanged(
         HWINEVENTHOOK hook,
         DWORD event,
         HWND hwnd,
@@ -193,7 +193,7 @@ bool UnderlayMonitor::Impl::Connect(const std::wstring processName)
         EVENT_OBJECT_LOCATIONCHANGE,    // eventMin
         EVENT_OBJECT_LOCATIONCHANGE,    // eventMax
         NULL,                           // hmodWinWventProc
-        Impl::callback,                 // pfnEventProc
+        &Impl::LocationChanged,         // pfnEventProc
         target.pid,                     // idProcess
         0,                              // idThread,
         WINEVENT_OUTOFCONTEXT           // dwFlags
@@ -232,7 +232,7 @@ void UnderlayMonitor::Impl::UpdateOverlay(RECT rect)
     );
 }
 
-void UnderlayMonitor::Impl::callback(
+void UnderlayMonitor::Impl::LocationChanged(
     HWINEVENTHOOK hook,
     DWORD event,
     HWND hwnd,
