@@ -10,6 +10,19 @@ to click and draw a transparent hole through which interesting data can be viewe
 
 ![demo](screenshots/overlay.png)
 
+## Usage
+
+Blockout can be run in two ways. The easy way is to launch from the CLI with the name of your target
+application as the first parameter.
+
+```
+blockout firefox.exe
+```
+
+This will keep the overlay exactly over your Firefox browser and tracker its movement and resizing.
+
+Alternatively, you may launch without any parmeters and fiddle with the location yourself.
+
 ## Improvements
 
 - [X] Make it easier to draw the initial hole

@@ -1,3 +1,7 @@
+# v1.03
+
+- feature: add underlay binding
+
 # v1.0.2
 
 - fix: handle title bar height in Y coordinate calculation
