@@ -15,30 +15,32 @@
 #define BLOCKOUT_COLOR RGB(0, 0, 0)
 
 // Convert message pump event to relative point inside window
-#define TRUE_POINT(lParam) { LOWORD(lParam) , HIWORD(lParam) + GetSystemMetrics(SM_CYCAPTION) }
+#define TRUE_POINT(lParam)                                                                                             \
+    {                                                                                                                  \
+        LOWORD(lParam), HIWORD(lParam) + GetSystemMetrics(SM_CYCAPTION)                                                \
+    }
 
-struct Args {
+struct Args
+{
     std::wstring targetProcessName;
 };
 
 // Global Variables:
-HINSTANCE hInst;                                // current instance
-WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
-WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
-Args args;                                      // command line args
-std::unique_ptr<Hole> pHole;                    // window hole instance
-std::unique_ptr<UnderlayMonitor> pMonitor;      // target process monitor
+HINSTANCE hInst;                           // current instance
+WCHAR szTitle[MAX_LOADSTRING];             // The title bar text
+WCHAR szWindowClass[MAX_LOADSTRING];       // the main window class name
+Args args;                                 // command line args
+std::unique_ptr<Hole> pHole;               // window hole instance
+std::unique_ptr<UnderlayMonitor> pMonitor; // target process monitor
 
 // Forward declarations of functions included in this code module:
-ATOM                RegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-void                ParseArgs();
+ATOM RegisterClass(HINSTANCE hInstance);
+BOOL InitInstance(HINSTANCE, int);
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+void ParseArgs();
 
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-    _In_opt_ HINSTANCE hPrevInstance,
-    _In_ LPWSTR    lpCmdLine,
-    _In_ int       nCmdShow)
+int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine,
+                      _In_ int nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
@@ -73,8 +75,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     return (int)msg.wParam;
 }
 
-
-
 //
 //  FUNCTION: MyRegisterClass()
 ATOM RegisterClass(HINSTANCE hInstance)
@@ -104,20 +104,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     hInst = hInstance; // Store instance handle in our global variable
 
-    HWND hWnd = CreateWindowExW(
-        WS_EX_LAYERED,                          // dwExStyle
-        szWindowClass,                          // lpClassName
-        szTitle,                                // lpWindowName
-        WS_TILEDWINDOW |
-        WS_MAXIMIZE,                            // dwStyle
-        CW_USEDEFAULT,                          // x
-        0,                                      // y
-        CW_USEDEFAULT,                          // nWidth
-        0,                                      // nHeight
-        nullptr,                                // hWndParent
-        nullptr,                                // hMenu
-        hInstance,                              // hInstance      
-        nullptr                                 // lpParam
+    HWND hWnd = CreateWindowExW(WS_EX_LAYERED,                // dwExStyle
+                                szWindowClass,                // lpClassName
+                                szTitle,                      // lpWindowName
+                                WS_TILEDWINDOW | WS_MAXIMIZE, // dwStyle
+                                CW_USEDEFAULT,                // x
+                                0,                            // y
+                                CW_USEDEFAULT,                // nWidth
+                                0,                            // nHeight
+                                nullptr,                      // hWndParent
+                                nullptr,                      // hMenu
+                                hInstance,                    // hInstance
+                                nullptr                       // lpParam
     );
 
     if (!hWnd)
@@ -130,7 +128,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     ShowWindow(hWnd, nCmdShow | nCmdShow);
     UpdateWindow(hWnd);
 
-    if (!args.targetProcessName.empty()) {
+    if (!args.targetProcessName.empty())
+    {
         pMonitor = std::make_unique<UnderlayMonitor>(hWnd);
         pMonitor->StartMonitor(args.targetProcessName);
 
@@ -144,7 +143,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 // Function ParseArgs()
 void ParseArgs()
 {
-    LPWSTR* szArglist;
+    LPWSTR *szArglist;
     int nArgs;
 
     szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
@@ -163,8 +162,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_COMMAND:
         return DefWindowProc(hWnd, message, wParam, lParam);
-    case WM_PAINT:
-    {
+    case WM_PAINT: {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
         pHole->DrawHole(hWnd);
@@ -188,4 +186,3 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
-

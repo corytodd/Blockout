@@ -1,7 +1,7 @@
 #pragma once
 #include <Windows.h>
 
-// 
+//
 // Defines a transparent hole in a window
 //
 // A hole uses standard rectangle coordinates:
@@ -12,22 +12,19 @@
 //
 class Hole
 {
-public:
-    Hole() :
-        _start({ 0, 0 }),
-        _end({ 0, 0 }),
-        _cur({ 0, 0 }),
-        _isUpdating(false),
-        _rect({0, 0, 0, 0})
+  public:
+    Hole() : _start({0, 0}), _end({0, 0}), _cur({0, 0}), _isUpdating(false), _rect({0, 0, 0, 0})
     {
-
     }
 
-    ~Hole() {}
+    ~Hole()
+    {
+    }
 
-    // 
+    //
     // Start defining a hole
-    void Start(HWND hWnd, POINT pt) {
+    void Start(HWND hWnd, POINT pt)
+    {
         _start = _cur = pt;
         _isUpdating = true;
 
@@ -41,8 +38,10 @@ public:
 
     //
     // Extend all bounds of current hole if update in progress
-    void Drag(HWND hWnd, POINT pt) {
-        if (_isUpdating) {
+    void Drag(HWND hWnd, POINT pt)
+    {
+        if (_isUpdating)
+        {
             _cur = pt;
 
             _rect.left = min(_cur.x, _start.x);
@@ -54,10 +53,12 @@ public:
         }
     }
 
-    // 
+    //
     // End definition of hole
-    void End(HWND hWnd, POINT pt) {
-        if (_isUpdating) {
+    void End(HWND hWnd, POINT pt)
+    {
+        if (_isUpdating)
+        {
             _end = pt;
             _isUpdating = false;
 
@@ -90,12 +91,10 @@ public:
         SetWindowRgn(hWnd, windowRgn, TRUE);
     }
 
-
-private:
+  private:
     POINT _start;
     POINT _end;
     POINT _cur;
     RECT _rect;
     BOOL _isUpdating;
 };
-
