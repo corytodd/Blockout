@@ -2,6 +2,11 @@
 
 An overlay tool for blacking out regions of a screen.
 
+## Archived 2023.09.07
+
+Power Toys has a [nifty new feature](https://learn.microsoft.com/en-us/windows/powertoys/crop-and-lock) called crop & lock that is
+better and easier to use.
+
 ## Use Case
 
 While working with tables of dense data, my eyes sometimes wander which makes reading
